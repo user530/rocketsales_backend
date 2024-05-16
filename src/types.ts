@@ -12,6 +12,7 @@ interface RestLink {
 
 interface WithPage {
     _page: number;
+    _page_count?: number;
 };
 
 interface WithLinks {
@@ -19,6 +20,10 @@ interface WithLinks {
         self: RestLink;
         [key: string]: RestLink;
     }
+};
+
+interface WithItems {
+    _total_items?: number;
 };
 
 interface WithEmbedded<T> {
@@ -33,12 +38,28 @@ interface EmbedTags {
     tags: Tag[];
 };
 
-interface EmbedCompanies {
-    companies: CompanyRef[];
+interface EmbedCompanyRefs {
+    companies?: CompanyRef[];
+};
+
+interface EmbedContactRefs {
+    contacts?: ContactRef[];
 };
 
 interface EmbedContacts {
-    contacts: ContactRef[];
+    contacts: Contact[];
+}
+
+interface EmbedStatuses {
+    statuses: Status[];
+};
+
+interface EmbedUsers {
+    users: User[];
+};
+
+interface EmbedPipelines {
+    pipelines: Pipeline[];
 };
 
 // Placeholder embeds
@@ -51,10 +72,10 @@ interface EmbedLossReasons {
 };
 
 // Embeded object bundles
-interface EmbedTagsCompanies extends EmbedTags, EmbedCompanies { };
+interface EmbedTagsCompanies extends EmbedTags, EmbedCompanyRefs { };
 interface EmbedTagsCompaniesContactsCatalogLosses extends
     EmbedTagsCompanies,
-    EmbedContacts,
+    EmbedContactRefs,
     EmbedCatalogElements,
     EmbedLossReasons { };
 
@@ -116,6 +137,29 @@ export interface Contact extends WithId, WithName, WithLinks, WithEmbedded<Embed
     custom_fields_values: CustomField[];
 };
 
+export interface User extends WithId, WithName, WithLinks {
+    email: string;
+    lang: string;
+    rights: Record<string, any>;    // Placeholder
+};
+
+export interface Pipeline extends WithId, WithName, WithLinks, WithEmbedded<EmbedStatuses> {
+    sort: number;
+    is_main: boolean;
+    is_unsorted_on: boolean;
+    is_archive: boolean;
+    account_id: number;
+};
+
+export interface Status extends WithId, WithName, WithLinks {
+    sort: number;
+    is_editable: boolean;
+    pipeline_id: number;
+    color: string;
+    type: number;
+    account_id: number;
+};
+
 // Custom properties
 interface CustomField {
     field_id: number;
@@ -132,5 +176,8 @@ interface CustomFieldValue {
 };
 
 // Get ALl Response body
-interface GeneralResponse extends WithPage, WithLinks { };
-export interface GeneralLeadsResponse extends GeneralResponse, WithEmbedded<EmbedLeads> { };
+interface GeneralGetResponse extends WithPage, WithLinks, WithItems { };
+export interface GetLeadsResponse extends GeneralGetResponse, WithEmbedded<EmbedLeads> { };
+export interface GetPipelinesResponse extends GeneralGetResponse, WithEmbedded<EmbedPipelines> { };
+export interface GetUsersResponse extends GeneralGetResponse, WithEmbedded<EmbedUsers> { };
+export interface GetContactsResponse extends GeneralGetResponse, WithEmbedded<EmbedContacts> { };
