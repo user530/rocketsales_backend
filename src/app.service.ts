@@ -54,10 +54,22 @@ export class AppService {
   };
 
   private leadsToRelationIds(leads: Lead[]): Record<'statusIds' | 'responsibleIds' | 'contactIds', string[]> {
+    const statusIds = new Set<string>();
+    const responsibleIds = new Set<string>();
+    const contactIds = new Set<string>();
+
+    // Iterate over leads array once and collect ids of all related entities
+    leads.forEach(
+      ({ status_id, responsible_user_id, _embedded }) => {
+        statusIds.add(`${status_id}`);
+        responsibleIds.add(`${responsible_user_id}`);
+        _embedded?.contacts?.forEach(contact => contactIds.add(`${contact.id}`));
+      });
+
     return {
-      statusIds: [],
-      responsibleIds: [],
-      contactIds: [],
+      statusIds: Array.from(statusIds),
+      responsibleIds: Array.from(responsibleIds),
+      contactIds: Array.from(contactIds),
     };
   };
 
