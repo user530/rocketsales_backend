@@ -58,7 +58,7 @@ export class ApiService implements IApiService {
       // Fetch leads with contacts
       const response = await this.fetchFromAmoApi<GetLeadsResponse>(
         '/leads',
-        'with=contacts' + query ? `&query=${query}` : ''
+        'with=contacts' + (query ? `&query=${query}` : '')
       );
 
       return response._embedded?.leads || [];
