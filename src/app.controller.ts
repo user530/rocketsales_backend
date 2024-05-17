@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { AppService } from './app.service';
 
 @Controller('api')
@@ -8,7 +8,8 @@ export class AppController {
   ) { }
 
   @Get('leads')
-  async getLeads(): Promise<any> {
+  async getLeads(@Query() query: Record<string, unknown>): Promise<any> {
+    console.log(query)
     return this.appService.getJoinedLeads();
   }
 }

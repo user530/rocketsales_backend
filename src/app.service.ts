@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import axios from 'axios';
+import axios, { AxiosHeaders, AxiosResponse, RawAxiosRequestHeaders } from 'axios';
 import {
   Contact,
   Lead,
@@ -12,6 +12,7 @@ import {
   GetUsersResponse,
   JoinedLeads,
 } from './types';
+import { URL } from 'url';
 
 @Injectable()
 export class AppService {
@@ -30,7 +31,14 @@ export class AppService {
   }
 
   private async getLeadsWithContacts(): Promise<Lead[]> {
-    return [];
+    try {
+      const res = await this.fetchFromAmoApi<GetLeadsResponse>('/leads', 'with=contacts');
+
+      return res._embedded?.leads || [];
+    } catch (error) {
+      console.error('GetLeadsWithContacts Error!', error);
+      throw error;
+    }
   };
 
   private async getStatusesByIds(statusIds: string[]): Promise<Status[]> {
@@ -57,4 +65,28 @@ export class AppService {
     return [];
   };
 
+  private async fetchFromAmoApi<T>(
+    endpoint: string,
+    queryString?: string,
+    baseURL: string = process.env.AMOCRM_API_URL,
+  ): Promise<T> {
+    try {
+      // Construct URL
+      const url = new URL(baseURL + endpoint);
+
+      // Add query params if needed
+      if (queryString)
+        url.search = queryString;
+
+      // Header with JWT token
+      const header: RawAxiosRequestHeaders = { Authorization: `Bearer ${process.env.AMOCRM_API_TOKEN}` };
+
+      const response = await axios.get<T>(url.toString(), { headers: header });
+
+      return response.data;
+    } catch (error) {
+      console.error('Failed to fetch from amoCRM!');
+      throw error;
+    }
+  }
 }
