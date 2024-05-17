@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { ApiController } from './api.controller';
+import { ApiService, EntitiesManipulationService } from './services';
 import { ConfigModule } from '@nestjs/config';
 import { amoConfig } from './config/amoCRM.config';
 import { plainToClass } from 'class-transformer';
@@ -27,7 +27,7 @@ import { validateSync } from 'class-validator';
       }
     }),
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [ApiController],
+  providers: [ApiService, EntitiesManipulationService],
 })
 export class AppModule { }
