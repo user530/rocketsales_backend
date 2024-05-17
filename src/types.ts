@@ -134,7 +134,7 @@ export interface Contact extends WithId, WithName, WithLinks, WithEmbedded<Embed
     is_deleted: boolean;
     is_unsorted: boolean;
     account_id: number;
-    custom_fields_values: CustomField[];
+    custom_fields_values: CustomField[] | null;
 };
 
 export interface User extends WithId, WithName, WithLinks {
@@ -175,8 +175,14 @@ interface CustomFieldValue {
     enum_code: string;
 };
 
-interface ContactInfo {
-    name: string;
+// Joined entities schema
+export interface JoinedStatus extends WithName {
+    color: string;
+};
+
+export interface JoinedResponsible extends WithName { };
+
+export interface JoinedContact extends WithName {
     phone?: string;
     email?: string;
     position?: string;
@@ -194,7 +200,7 @@ export interface JoinedLeads {
     name: string;
     price: number;
     created_at: number;
-    status: Pick<Status, 'name' | 'color'>;
-    responsible: Pick<User, 'name'>;
-    contacts: ContactInfo[];
+    status: JoinedStatus;
+    responsible: JoinedResponsible;
+    contacts: JoinedContact[];
 };

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import axios, { AxiosHeaders, AxiosResponse, RawAxiosRequestHeaders } from 'axios';
+import axios, { RawAxiosRequestHeaders } from 'axios';
 import {
   Contact,
   Lead,
@@ -11,6 +11,9 @@ import {
   GetPipelinesResponse,
   GetUsersResponse,
   JoinedLeads,
+  JoinedStatus,
+  JoinedResponsible,
+  JoinedContact,
 } from './types';
 import { URL } from 'url';
 
@@ -26,8 +29,9 @@ export class AppService {
     const statuses: Status[] = await this.getStatusesByIds(statusIds);
     const responsible: User[] = await this.getResponsiblesByIds(responsibleIds);
     const contacts: Contact[] = await this.getContactsByIds(contactIds);
-    const joinedLeads: JoinedLeads[] = this.joinEntities();
-    return [];
+    const joinedLeads: JoinedLeads[] = this.joinEntities(leads, statuses, responsible, contacts);
+
+    return joinedLeads;
   }
 
   private async getLeadsWithContacts(): Promise<Lead[]> {
@@ -122,14 +126,41 @@ export class AppService {
     };
   };
 
-  private joinEntities(): JoinedLeads[] {
-    return [];
+  private joinEntities(
+    leads: Lead[],
+    statuses: Status[],
+    responsible: User[],
+    contacts: Contact[]
+  ):
+    JoinedLeads[] {
+    return leads.map(
+      ({ name, price, created_at, status_id, responsible_user_id, _embedded }) => {
+        // Find required status and responsible user
+        const leadStatus = statuses.find(status => status.id === status_id);
+        const leadResponsible = responsible.find(user => user.id === responsible_user_id);
+        // Collect required contacts if any exist
+        const leadContacts = _embedded && _embedded.contacts
+          ? _embedded.contacts.map(
+            ({ id }) => contacts.find(contact => contact.id === id)
+          )
+          : [];
+
+        return {
+          name,
+          price,
+          created_at,
+          status: this.statusToJoined(leadStatus),
+          responsible: this.responsibleToJoined(leadResponsible),
+          contacts: this.contactsToJoined(leadContacts),
+        };
+      }
+    );
   };
 
   private async fetchFromAmoApi<T>(
     endpoint: string,
     queryString?: string,
-    baseURL: string = process.env.AMOCRM_API_URL,
+    baseURL: string = this.configService.get('AMOCRM_API_URL'),
   ): Promise<T> {
     try {
       // Construct URL
@@ -140,7 +171,7 @@ export class AppService {
         url.search = queryString;
 
       // Header with JWT token
-      const header: RawAxiosRequestHeaders = { Authorization: `Bearer ${process.env.AMOCRM_API_TOKEN}` };
+      const header: RawAxiosRequestHeaders = { Authorization: `Bearer ${this.configService.get('AMOCRM_API_TOKEN')}` };
 
       const response = await axios.get<T>(url.toString(), { headers: header });
 
@@ -153,5 +184,54 @@ export class AppService {
 
   private generateFilterQuery(param: string, valuesToFilter: string[]): string {
     return valuesToFilter.reduce<string>((filterStr, value, ind) => filterStr += `&filter[${[param]}][${ind}]=${value}`, '');
+  };
+
+  private statusToJoined({ name, color }: Status): JoinedStatus {
+    return {
+      name,
+      color,
+    };
+  };
+
+  private responsibleToJoined({ name }: User): JoinedResponsible {
+    return {
+      name,
+    };
+  };
+
+  private contactsToJoined(contacts: Contact[]): JoinedContact[] {
+    return contacts.map(
+      ({ name, custom_fields_values }) => {
+        // Prepare contact data object for optional fields
+        const contactData: Omit<JoinedContact, 'name'> = {};
+
+        // Check and populate if there are contact data
+        if (custom_fields_values) {
+          custom_fields_values.forEach(
+            ({ field_code, values }) => {
+              switch (field_code) {
+                case 'PHONE': {
+                  contactData['phone'] = values[0].value;
+                  break;
+                }
+                case 'EMAIL': {
+                  contactData['email'] = values[0].value;
+                  break;
+                }
+                case 'POSITION': {
+                  contactData['phone'] = values[0].value;
+                  break;
+                }
+              }
+            }
+          )
+        };
+
+        return {
+          name,
+          ...contactData,
+        };
+      }
+    )
   };
 }
