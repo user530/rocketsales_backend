@@ -87,7 +87,18 @@ export class AppService {
   };
 
   private async getContactsByIds(contactIds: string[]): Promise<Contact[]> {
-    return [];
+    try {
+      // Prepare the filter query
+      const filterQuery = this.generateFilterQuery('id', contactIds);
+
+      // Fetch required contacts
+      const response = await this.fetchFromAmoApi<GetContactsResponse>('/contacts', filterQuery);
+
+      return response?._embedded?.contacts ?? [];
+    } catch (error) {
+      console.error('GetContactsByIds Error!', error);
+      throw error;
+    }
   };
 
   private leadsToRelationIds(leads: Lead[]):
@@ -141,6 +152,6 @@ export class AppService {
   };
 
   private generateFilterQuery(param: string, valuesToFilter: string[]): string {
-    return valuesToFilter.reduce<string>((filterStr, value) => filterStr += `&filter[${[param]}]=${value}`, '');
-  }
+    return valuesToFilter.reduce<string>((filterStr, value, ind) => filterStr += `&filter[${[param]}][${ind}]=${value}`, '');
+  };
 }
