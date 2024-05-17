@@ -32,9 +32,9 @@ export class AppService {
 
   private async getLeadsWithContacts(): Promise<Lead[]> {
     try {
-      const res = await this.fetchFromAmoApi<GetLeadsResponse>('/leads', 'with=contacts');
+      const response = await this.fetchFromAmoApi<GetLeadsResponse>('/leads', 'with=contacts');
 
-      return res._embedded?.leads || [];
+      return response._embedded?.leads || [];
     } catch (error) {
       console.error('GetLeadsWithContacts Error!', error);
       throw error;
@@ -42,7 +42,33 @@ export class AppService {
   };
 
   private async getStatusesByIds(statusIds: string[]): Promise<Status[]> {
-    return [];
+    try {
+      // Sadly there is no filtering for the pipelines or statuses
+      const response = await this.fetchFromAmoApi<GetPipelinesResponse>('/leads/pipelines');
+      let result: Status[] = [];
+
+      const pipelines = response?._embedded?.pipelines ?? [];
+
+      // Iterate over each pipeline and fill the result
+      pipelines.forEach(
+        (pipeline) => {
+          const statuses = pipeline?._embedded?.statuses;
+
+          // Skip pipelines w/o statuses
+          if (!statuses) return;
+          // Filter statuses that are required
+          const required = statuses.filter(status => statusIds.includes(`${status.id}`));
+
+          // Add them to the result
+          result = result.concat(required);
+        }
+      );
+
+      return result;
+    } catch (error) {
+      console.error('GetStatusesByIds Error!', error);
+      throw error;
+    }
   };
 
   private async getResponsiblesByIds(userIds: string[]): Promise<User[]> {
@@ -53,7 +79,8 @@ export class AppService {
     return [];
   };
 
-  private leadsToRelationIds(leads: Lead[]): Record<'statusIds' | 'responsibleIds' | 'contactIds', string[]> {
+  private leadsToRelationIds(leads: Lead[]):
+    Record<'statusIds' | 'responsibleIds' | 'contactIds', string[]> {
     const statusIds = new Set<string>();
     const responsibleIds = new Set<string>();
     const contactIds = new Set<string>();
@@ -100,5 +127,9 @@ export class AppService {
       console.error('Failed to fetch from amoCRM!');
       throw error;
     }
+  };
+
+  private generateFilterQuery(param: string, valuesToFilter: string[]): string {
+    return valuesToFilter.reduce<string>((filterStr, value) => filterStr += `&filter[${[param]}]=${value}`, '');
   }
 }
