@@ -9,6 +9,7 @@ export class ApiController {
 
   @Get('leads')
   async getLeads(@Query('query') query: string): Promise<any> {
-    return this.appService.getJoinedLeads();
+    console.log(query);
+    return this.appService.getJoinedLeads(query);
   }
 }

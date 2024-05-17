@@ -26,10 +26,10 @@ export class ApiService implements IApiService {
     private readonly entitiesManipulationService: EntitiesManipulationService,
   ) { }
 
-  async getJoinedLeads(): Promise<JoinedLeads[]> {
+  async getJoinedLeads(query?: string): Promise<JoinedLeads[]> {
     try {
       // Fetch all leads
-      const leads: Lead[] = await this.getLeadsWithContacts();
+      const leads: Lead[] = await this.getLeadsWithContacts(query);
 
       // Collect relation ids for required entities
       const { statusIds, responsibleIds, contactIds } = this.entitiesManipulationService.leadsToRelationIds(leads);
@@ -53,10 +53,13 @@ export class ApiService implements IApiService {
     }
   }
 
-  private async getLeadsWithContacts(): Promise<Lead[]> {
+  private async getLeadsWithContacts(query?: string): Promise<Lead[]> {
     try {
       // Fetch leads with contacts
-      const response = await this.fetchFromAmoApi<GetLeadsResponse>('/leads', 'with=contacts');
+      const response = await this.fetchFromAmoApi<GetLeadsResponse>(
+        '/leads',
+        'with=contacts' + query ? `&query=${query}` : ''
+      );
 
       return response._embedded?.leads || [];
     } catch (error) {
