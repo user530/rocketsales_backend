@@ -175,9 +175,26 @@ interface CustomFieldValue {
     enum_code: string;
 };
 
+interface ContactInfo {
+    name: string;
+    phone?: string;
+    email?: string;
+    position?: string;
+};
+
 // Get ALl Response body
 interface GeneralGetResponse extends WithPage, WithLinks, WithItems { };
 export interface GetLeadsResponse extends GeneralGetResponse, WithEmbedded<EmbedLeads> { };
 export interface GetPipelinesResponse extends GeneralGetResponse, WithEmbedded<EmbedPipelines> { };
 export interface GetUsersResponse extends GeneralGetResponse, WithEmbedded<EmbedUsers> { };
 export interface GetContactsResponse extends GeneralGetResponse, WithEmbedded<EmbedContacts> { };
+
+// Joined Leads type
+export interface JoinedLeads {
+    name: string;
+    price: number;
+    created_at: number;
+    status: Pick<Status, 'name' | 'color'>;
+    responsible: Pick<User, 'name'>;
+    contacts: ContactInfo[];
+};
