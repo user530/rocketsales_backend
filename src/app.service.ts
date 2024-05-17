@@ -72,7 +72,18 @@ export class AppService {
   };
 
   private async getResponsiblesByIds(userIds: string[]): Promise<User[]> {
-    return [];
+    try {
+      // Prepare the filter query
+      const filterQuery = this.generateFilterQuery('id', userIds);
+
+      // Fetch required users
+      const response = await this.fetchFromAmoApi<GetUsersResponse>('/users', filterQuery);
+
+      return response?._embedded?.users ?? [];
+    } catch (error) {
+      console.error('GetResponsiblesByIds Error!', error);
+      throw error;
+    }
   };
 
   private async getContactsByIds(contactIds: string[]): Promise<Contact[]> {
