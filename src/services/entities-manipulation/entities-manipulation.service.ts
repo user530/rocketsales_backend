@@ -86,7 +86,7 @@ export class EntitiesManipulationService implements IEntitiesManipulationService
                                     break;
                                 }
                                 case 'POSITION': {
-                                    contactData['phone'] = values[0].value;
+                                    contactData['position'] = values[0].value;
                                     break;
                                 }
                             }
